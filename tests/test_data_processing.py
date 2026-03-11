@@ -23,7 +23,7 @@ def test_numpy_works():
 
 import unittest
 
-data_processed_and_balanced= pd.read_excel("data/data_processed_and_balanced.xlsxp")
+data_processed_and_balanced= pd.read_excel("data/data_processed_and_balanced.xlsx")
 
 class TestDataProcessing(unittest.TestCase):
 
