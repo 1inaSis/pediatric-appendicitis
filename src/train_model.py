@@ -1,10 +1,10 @@
 """
-Script pour entraîner et comparer plusieurs modèles de Machine Learning 
+Script pour entraîner et comparer plusieurs modèles de Machine Learning
 pour le diagnostic d'appendicite pédiatrique.
+Utilise les données traitées par data_processing.py (Sara).
 """
 
 import os
-import sys
 import pandas as pd
 import numpy as np
 import joblib
@@ -19,24 +19,21 @@ import lightgbm as lgb
 import catboost as cb
 
 
-def auto_prepare_data(filepath, target_col=None):
+def load_processed_data(filepath, target_col='Diagnosis'):
     """
-    Fonction universelle qui peut travailler avec N'IMPORTE QUEL dataset.
-    - Détecte automatiquement la colonne cible si non spécifiée
-    - Fonctionne avec CSV et Excel
-    - Gère automatiquement les valeurs manquantes
-    - Encode automatiquement les colonnes texte
+    Charge les données déjà traitées par Sara (data_processing.py).
+    Les données sont déjà nettoyées, équilibrées et sans outliers.
 
     Args:
-        filepath   : chemin vers le fichier (CSV ou Excel)
-        target_col : nom de la colonne cible (optionnel)
+        filepath   : chemin vers le fichier traité par Sara
+        target_col : nom de la colonne cible
 
     Returns:
         X : features prêtes pour le modèle
         y : target encodée en 0/1
     """
 
-    # ── 1. Chargement automatique selon l'extension ────────────
+    # ── 1. Chargement du fichier traité par Sara ───────────────
     extension = filepath.split('.')[-1].lower()
 
     if extension == 'csv':
@@ -44,69 +41,46 @@ def auto_prepare_data(filepath, target_col=None):
     elif extension in ['xlsx', 'xls']:
         df = pd.read_excel(filepath, engine='openpyxl')
     else:
-        raise ValueError(f"❌ Format non supporté : {extension}. Utilise CSV ou Excel.")
+        raise ValueError(f"❌ Format non supporté : {extension}")
 
     print(f"✅ Fichier chargé : {df.shape[0]} lignes, {df.shape[1]} colonnes")
 
-    # ── 2. Détection automatique de la colonne cible ───────────
-    if target_col is None:
-        possible_targets = [
-            col for col in df.columns
-            if any(keyword in col.lower()
-                   for keyword in ['diagnosis', 'target', 'label',
-                                   'outcome', 'result', 'class'])
-        ]
-        if possible_targets:
-            target_col = possible_targets[0]
-            print(f"🎯 Colonne cible détectée : '{target_col}'")
-        else:
-            target_col = df.columns[-1]
-            print(f"⚠️ Colonne cible par défaut : '{target_col}'")
-
-    # ── 3. Supprime les lignes où la cible est manquante ───────
+    # ── 2. Supprime les lignes où la cible est manquante ───────
     df = df.dropna(subset=[target_col])
     print(f"✅ Après nettoyage : {df.shape[0]} lignes")
 
-    # ── 4. Sépare X et y ───────────────────────────────────────
+    # ── 3. Sépare X et y ───────────────────────────────────────
     X = df.drop(columns=[target_col])
     y = df[target_col].copy()
 
-    # ── 5. Encode la target en 0/1 ────────────────────────────
+    # ── 4. Encode la target en 0/1 ────────────────────────────
     print(f"📊 Valeurs uniques target : {y.unique()}")
 
-    # Conversion forcée en string standard puis mapping
+    # Conversion forcée en string puis mapping
     y = y.astype(str).str.strip().str.lower()
 
-    # Mapping explicite pour tous les cas possibles
     mapping = {
-        'appendicitis':    1,    'no appendicitis': 0,
-        'yes':             1,    'no':              0,
-        'true':            1,    'false':           0,
-        'positive':        1,    'negative':        0,
-        'malignant':       1,    'benign':          0,
-        '1':               1,    '0':               0,
-        'sick':            1,    'healthy':         0,
-        'disease':         1,    'normal':          0,
+        'appendicitis':    1,
+        'no appendicitis': 0,
+        'yes':             1,    'no':       0,
+        'true':            1,    'false':    0,
+        'positive':        1,    'negative': 0,
+        '1':               1,    '0':        0,
     }
 
     y_mapped = y.map(mapping)
 
-    # Si des valeurs ne sont pas dans le mapping → encodage automatique
     if y_mapped.isnull().any():
-        print("⚠️ Valeurs non reconnues — encodage automatique LabelEncoder")
+        print("⚠️ Encodage automatique LabelEncoder")
         le = LabelEncoder()
-        y = pd.Series(
-            le.fit_transform(y.astype(str)),
-            index=y.index
-        )
+        y = pd.Series(le.fit_transform(y.astype(str)), index=y.index)
     else:
         y = y_mapped
 
-    # Conversion finale en entier
     y = y.fillna(0).astype(int)
     print(f"✅ Distribution target : {dict(y.value_counts())}")
 
-    # ── 6. Encode les colonnes texte dans X ───────────────────
+    # ── 5. Encode les colonnes texte dans X ───────────────────
     cat_cols = X.select_dtypes(include=['object', 'string']).columns.tolist()
     if len(cat_cols) > 0:
         print(f"🔄 Encodage de {len(cat_cols)} colonnes texte...")
@@ -114,7 +88,7 @@ def auto_prepare_data(filepath, target_col=None):
         for col in cat_cols:
             X[col] = le.fit_transform(X[col].astype(str))
 
-    # ── 7. Gère les valeurs manquantes dans X ─────────────────
+    # ── 6. Gère les valeurs manquantes restantes dans X ───────
     num_cols = X.select_dtypes(include=[np.number]).columns
     missing_count = int(X[num_cols].isnull().sum().sum())
 
@@ -131,16 +105,6 @@ def auto_prepare_data(filepath, target_col=None):
 def train_and_evaluate_models(X_train, X_test, y_train, y_test):
     """
     Entraîne les 4 modèles ML et évalue leurs performances.
-
-    Args:
-        X_train : Features d'entraînement
-        X_test  : Features de test
-        y_train : Cibles d'entraînement
-        y_test  : Cibles de test
-
-    Returns:
-        trained_models : dictionnaire des modèles entraînés
-        results_df     : DataFrame avec les métriques
     """
 
     models = {
@@ -159,20 +123,16 @@ def train_and_evaluate_models(X_train, X_test, y_train, y_test):
     for name, model in models.items():
         print(f"\n⚙️  Entraînement : {name}...")
 
-        # Entraînement
         model.fit(X_train, y_train)
         trained_models[name] = model
 
-        # Prédictions
         y_pred = model.predict(X_test)
 
-        # Probabilités pour ROC-AUC
         if hasattr(model, "predict_proba"):
             y_proba = model.predict_proba(X_test)[:, 1]
         else:
             y_proba = y_pred
 
-        # Calcul des métriques
         metrics = {
             'Modèle':    name,
             'Accuracy':  round(accuracy_score(y_test, y_pred), 4),
@@ -196,31 +156,19 @@ def train_and_evaluate_models(X_train, X_test, y_train, y_test):
 def save_best_model(trained_models, results_df, X):
     """
     Sélectionne et sauvegarde le meilleur modèle selon le ROC-AUC.
-
-    Args:
-        trained_models : dictionnaire des modèles entraînés
-        results_df     : DataFrame avec les métriques
-        X              : DataFrame des features
-
-    Returns:
-        best_model      : le meilleur modèle
-        best_model_name : nom du meilleur modèle
     """
 
     os.makedirs('models', exist_ok=True)
 
-    # Meilleur modèle selon ROC-AUC
     best_model_name = results_df['ROC-AUC'].idxmax()
     best_model      = trained_models[best_model_name]
 
     print(f"\n🏆 Meilleur modèle : {best_model_name}")
     print(f"   ROC-AUC : {results_df.loc[best_model_name, 'ROC-AUC']}")
 
-    # Sauvegarde du meilleur modèle
     joblib.dump(best_model, 'models/best_model.pkl')
     print(f"💾 Modèle sauvegardé : models/best_model.pkl")
 
-    # Sauvegarde des noms des features
     feature_names = list(X.columns) if isinstance(X, pd.DataFrame) \
                     else [f"feature_{i}" for i in range(X.shape[1])]
 
@@ -233,31 +181,35 @@ def save_best_model(trained_models, results_df, X):
 def main():
     """
     Pipeline complet :
-    1. Chargement universel des données
-    2. Séparation train/test
-    3. Entraînement des 4 modèles
-    4. Comparaison des performances
-    5. Sauvegarde du meilleur modèle
+    1. Charge les données traitées par Sara
+    2. Sépare train/test
+    3. Entraîne les 4 modèles
+    4. Compare les performances
+    5. Sauvegarde le meilleur modèle
     """
 
-    # ⚠️ Modifie uniquement ces 2 lignes si tu changes de dataset
-    data_path  = 'data/app_data.xlsx'
+    # ⚠️ Utilise le fichier traité par Sara
+    data_path  = 'data/data_processed_and_balanced.xlsx'
     target_col = 'Diagnosis'
 
-    # ── 1. Chargement des données ──────────────────────────────
-    print(f"\n📂 Chargement des données : {data_path}")
+    # ── 1. Chargement ──────────────────────────────────────────
+    print(f"\n📂 Chargement des données traitées : {data_path}")
+
+    # Si Sara n'a pas encore pushé son fichier → fallback sur l'original
+    if not os.path.exists(data_path):
+        print(f"⚠️  Fichier de Sara introuvable → fallback : data/app_data.xlsx")
+        data_path = 'data/app_data.xlsx'
+
     try:
-        X, y = auto_prepare_data(data_path, target_col=target_col)
+        X, y = load_processed_data(data_path, target_col=target_col)
         print(f"✅ Données chargées : {X.shape[0]} patients, {X.shape[1]} features")
     except Exception as e:
         print(f"❌ Erreur chargement : {e}")
         return
 
-    # ── 2. Vérification que la target a bien 2 classes ─────────
-    unique_classes = y.unique()
-    if len(unique_classes) < 2:
-        print(f"❌ Erreur : la target n'a qu'une seule classe {unique_classes}")
-        print("   Vérifie que 'target_col' est correct.")
+    # ── 2. Vérification 2 classes ──────────────────────────────
+    if len(y.unique()) < 2:
+        print(f"❌ Erreur : la target n'a qu'une seule classe {y.unique()}")
         return
 
     # ── 3. Séparation Train / Test ─────────────────────────────
@@ -283,7 +235,7 @@ def main():
     print(results_df.to_string())
     print("="*60)
 
-    # ── 6. Sauvegarde du meilleur modèle ───────────────────────
+    # ── 6. Sauvegarde ──────────────────────────────────────────
     best_model, best_name = save_best_model(trained_models, results_df, X)
 
     print("\n✅ Pipeline terminé avec succès !")
