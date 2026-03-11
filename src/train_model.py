@@ -1,8 +1,5 @@
-"""
-Script pour entraîner et comparer plusieurs modèles de Machine Learning
-pour le diagnostic d'appendicite pédiatrique.
-Utilise les données traitées par data_processing.py (Sara).
-"""
+"""Script pour entraîner et comparer plusieurs modèles de Machine Learning pour le diagnostic d'appendicite pédiatrique.
+Utilise les données traitées par data_processing.py (Sara)."""
 
 import os
 import pandas as pd
