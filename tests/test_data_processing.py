@@ -23,7 +23,13 @@ def test_numpy_works():
 
 import unittest
 
-data_processed_and_balanced= pd.read_excel("data/data_processed_and_balanced.xlsx")
+import os
+import pandas as pd
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+file_path = os.path.join(BASE_DIR, "data", "data_processed_and_balanced.xlsx")
+
+data_processed_and_balanced = pd.read_excel(file_path)
 
 class TestDataProcessing(unittest.TestCase):
 
