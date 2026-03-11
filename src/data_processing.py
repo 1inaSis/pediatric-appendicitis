@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 from scipy.stats.mstats import winsorize
 
-# Charger le dataset Excel contenant les données cliniques des patients
-data=pd.read_excel("data/app_data.xlsx",engine="openpyxl")
+# Charger le dataset CSV contenant les données cliniques des patients
+data = pd.read_csv("data/processed/data.csv")
+print("Dataset loaded successfully:", data.shape)
 
 # Indiquer les variables avec leur nombre de valeurs manquantes
 print(data.isnull().sum())
