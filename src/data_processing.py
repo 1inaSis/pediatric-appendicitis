@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from scipy.stats.mstats import winsorize
 
 # Charger le dataset Excel contenant les données cliniques des patients
 data=pd.read_excel("data/app_data.xlsx",engine="openpyxl")
@@ -40,6 +41,13 @@ data = data.dropna(subset=[
 "Lower_Right_Abd_Pain",
 "Diagnosis"
 ])
+
+# Sélectionner les colonnes numériques
+num_cols = data.select_dtypes(include=['float64','int64']).columns
+
+# appliquer winsorization (ex: couper les 5% les plus extrêmes) pour éliminer les valeurs outliers
+for col in num_cols:
+    data[col] = winsorize(data[col], limits=[0.05, 0.05])
 
 # Séparer les variables explicatives  de la variable cible
 
