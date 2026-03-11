@@ -75,5 +75,65 @@ data_processed_and_balanced = data_processed_and_balanced.sample(frac=1, random_
 # Vérifier la nouvelle distribution
 print(data_processed_and_balanced['Diagnosis'].value_counts())
 
-#Sauvegarder la data traitée et équilibrée
+def optimize_memory(df):
+    """
+    Cette fonction réduit l'utilisation mémoire d'un DataFrame
+    en convertissant les types numériques vers des types plus petits.
+
+    Par exemple :
+    int64  → int32 ou int16
+    float64 → float32
+
+    
+    """
+
+    # Calcul de la mémoire utilisée avant optimisation (en MB)
+    start_mem = df.memory_usage().sum() / 1024**2
+
+    # sélectionner uniquement les colonnes numériques
+    num_cols = df.select_dtypes(include=[np.number]).columns
+
+    # Parcours de toutes les colonnes numériques du DataFrame
+    for col in num_cols:
+            col_type = df[col].dtype
+    
+            # Trouver la valeur minimale et maximale de la colonne
+            c_min = df[col].min()
+            c_max = df[col].max()
+
+            # Traitement des colonnes entières
+            if str(col_type)[:3] == "int":
+
+                # Si les valeurs tiennent dans int8
+                if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
+                    df[col] = df[col].astype(np.int8)
+
+                # Sinon vérifier int16
+                elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
+                    df[col] = df[col].astype(np.int16)
+
+                # Sinon vérifier int32
+                elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
+                    df[col] = df[col].astype(np.int32)
+
+            # Traitement des colonnes flottantes
+            else:
+                # Conversion vers float32 pour réduire la mémoire
+                df[col] = df[col].astype(np.float32)
+
+    # Calcul de la mémoire utilisée après optimisation
+    end_mem = df.memory_usage().sum() / 1024**2
+
+    # Affichage des résultats
+    print(f"Memory usage before optimization: {start_mem:.2f} MB")
+    print(f"Memory usage after optimization: {end_mem:.2f} MB")
+
+    # Retourner le DataFrame optimisé
+    return df
+
+#Optimisation de la data traitée
+data_processed_and_balanced = optimize_memory(data_processed_and_balanced)
+
+
+#Sauvegarder la data optimisée en mémoire, traitée et équilibrée
 data_processed_and_balanced.to_excel("data/data_processed_and_balanced.xlsx", index=False, engine="openpyxl")
