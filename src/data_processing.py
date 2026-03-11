@@ -3,77 +3,83 @@ import numpy as np
 from scipy.stats.mstats import winsorize
 
 # Charger le dataset Excel contenant les données cliniques des patients
-data=pd.read_excel("data/app_data.xlsx",engine="openpyxl")
+def load_data(filepath="data/app_data.xlsx"):
+    data = pd.read_excel(filepath, engine="openpyxl")
+    return data
 
-# Indiquer les variables avec leur nombre de valeurs manquantes
-print(data.isnull().sum())
 
-# Supprimer les colonnes qui contiennent trop de valeurs manquantes ou qui ne sont pas suffisamment fiables pour l'analyse
-data = data.drop(columns=[
-"Segmented_Neutrophils",
-"Appendix_Wall_Layers",
-"Target_Sign",
-"Appendicolith",
-"Perfusion",
-"Perforation",
-"Surrounding_Tissue_Reaction",
-"Appendicular_Abscess",
-"Abscess_Location",
-"Pathological_Lymph_Nodes",
-"Lymph_Nodes_Location",
-"Bowel_Wall_Thickening",
-"Conglomerate_of_Bowel_Loops",
-"Ileus",
-"Coprostasis",
-"Meteorism",
-"Enteritis",
-"Gynecological_Findings"
-])
+def process_data(data):
+    # Indiquer les variables avec leur nombre de valeurs manquantes
+    print(data.isnull().sum())
 
-# Supprimer les lignes (patients) pour lesquelles certaines variables essentielles au diagnostic de l'appendicite sont manquantes
-data = data.dropna(subset=[
-"Age",
-"Sex",
-"Body_Temperature",
-"WBC_Count",
-"Neutrophil_Percentage",
-"CRP",
-"Lower_Right_Abd_Pain",
-"Diagnosis"
-])
+    # Supprimer les colonnes qui contiennent trop de valeurs manquantes ou qui ne sont pas suffisamment fiables pour l'analyse
+    data = data.drop(columns=[
+    "Segmented_Neutrophils",
+    "Appendix_Wall_Layers",
+    "Target_Sign",
+    "Appendicolith",
+    "Perfusion",
+    "Perforation",
+    "Surrounding_Tissue_Reaction",
+    "Appendicular_Abscess",
+    "Abscess_Location",
+    "Pathological_Lymph_Nodes",
+    "Lymph_Nodes_Location",
+    "Bowel_Wall_Thickening",
+    "Conglomerate_of_Bowel_Loops",
+    "Ileus",
+    "Coprostasis",
+    "Meteorism",
+    "Enteritis",
+    "Gynecological_Findings"
+    ])
 
-# Sélectionner les colonnes numériques
-num_cols = data.select_dtypes(include=['float64','int64']).columns
+    # Supprimer les lignes (patients) pour lesquelles certaines variables essentielles au diagnostic de l'appendicite sont manquantes
+    data = data.dropna(subset=[
+    "Age",
+    "Sex",
+    "Body_Temperature",
+    "WBC_Count",
+    "Neutrophil_Percentage",
+    "CRP",
+    "Lower_Right_Abd_Pain",
+    "Diagnosis"
+    ])
 
-# appliquer winsorization (ex: couper les 5% les plus extrêmes) pour éliminer les valeurs outliers
-for col in num_cols:
-    data[col] = winsorize(data[col], limits=[0.05, 0.05])
+    # Sélectionner les colonnes numériques
+    num_cols = data.select_dtypes(include=['float64','int64']).columns
 
-# Séparer les variables explicatives  de la variable cible
+    # appliquer winsorization (ex: couper les 5% les plus extrêmes) pour éliminer les valeurs outliers
+    for col in num_cols:
+        data[col] = winsorize(data[col], limits=[0.05, 0.05])
 
-# Variables contient toutes les caractéristiques cliniques utilisées pour prédire la maladie
-Variables = data.drop("Diagnosis", axis=1)
+    # Séparer les variables explicatives  de la variable cible
 
-#  Contenir la variable cible que le modèle devra prédire, ici le diagnostic d'appendicite
-ValeurCible = data["Diagnosis"]
+    # Variables contient toutes les caractéristiques cliniques utilisées pour prédire la maladie
+    Variables = data.drop("Diagnosis", axis=1)
 
-# Vérifier combien d'éléments pour les deux catégories du diagnostic: appendicite et non appendicite
-print(ValeurCible.value_counts())
-# On trouve qu'on a 398 pour appendicite et 274 pour non appendicite : c'et un déséquilibre à régler
+    #  Contenir la variable cible que le modèle devra prédire, ici le diagnostic d'appendicite
+    ValeurCible = data["Diagnosis"]
 
-#Séparation des deux catégories
-appendicitis = data[ValeurCible == 'appendicitis']
-non_appendicitis = data[ValeurCible != 'appendicitis']
+    # Vérifier combien d'éléments pour les deux catégories du diagnostic: appendicite et non appendicite
+    print(ValeurCible.value_counts())
+    # On trouve qu'on a 398 pour appendicite et 274 pour non appendicite : c'et un déséquilibre à régler
 
-# On opte pour du sur-échantillonage pour avoir la même taille de catégories
-max_len = max(len(appendicitis), len(non_appendicitis))
-appendicitis_balanced = appendicitis.sample(max_len, replace=True, random_state=42)
-non_appendicitis_balanced = non_appendicitis.sample(max_len, replace=True, random_state=42)
-data_processed_and_balanced = pd.concat([appendicitis_balanced, non_appendicitis_balanced])
-data_processed_and_balanced = data_processed_and_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
+    #Séparation des deux catégories
+    appendicitis = data[ValeurCible == 'appendicitis']
+    non_appendicitis = data[ValeurCible != 'appendicitis']
 
-# Vérifier la nouvelle distribution
-print(data_processed_and_balanced['Diagnosis'].value_counts())
+    # On opte pour du sur-échantillonage pour avoir la même taille de catégories
+    max_len = max(len(appendicitis), len(non_appendicitis))
+    appendicitis_balanced = appendicitis.sample(max_len, replace=True, random_state=42)
+    non_appendicitis_balanced = non_appendicitis.sample(max_len, replace=True, random_state=42)
+    data_processed_and_balanced = pd.concat([appendicitis_balanced, non_appendicitis_balanced])
+    data_processed_and_balanced = data_processed_and_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
+
+    # Vérifier la nouvelle distribution
+    print(data_processed_and_balanced['Diagnosis'].value_counts())
+
+    return data_processed_and_balanced
 
 def optimize_memory(df):
     """
@@ -127,13 +133,18 @@ def optimize_memory(df):
     # Affichage des résultats
     print(f"Memory usage before optimization: {start_mem:.2f} MB")
     print(f"Memory usage after optimization: {end_mem:.2f} MB")
+    #On passe de 0,24 MB à 0,19 MB
 
     # Retourner le DataFrame optimisé
     return df
 
-#Optimisation de la data traitée
-data_processed_and_balanced = optimize_memory(data_processed_and_balanced)
+def save_processed_data(df, filepath="data/data_processed_and_balanced.xlsx"):
+    """Sauvegarde le dataset traité"""
+    df.to_excel(filepath, index=False, engine="openpyxl")
 
+if __name__ == "__main__":
 
-#Sauvegarder la data optimisée en mémoire, traitée et équilibrée
-data_processed_and_balanced.to_excel("data/data_processed_and_balanced.xlsx", index=False, engine="openpyxl")
+    data = load_data()
+    data = process_data(data)
+    data = optimize_memory(data)
+    save_processed_data(data)
