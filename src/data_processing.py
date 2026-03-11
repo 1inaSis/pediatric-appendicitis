@@ -1,80 +1,119 @@
+from pathlib import Path
+
 import pandas as pd
-import numpy as np
 from scipy.stats.mstats import winsorize
 
-# Charger le dataset CSV contenant les données cliniques des patients
-data = pd.read_csv("data/processed/data.csv")
-print("Dataset loaded successfully:", data.shape)
 
-# Indiquer les variables avec leur nombre de valeurs manquantes
-print(data.isnull().sum())
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+RAW_DATA_CANDIDATES = [
+    PROJECT_ROOT / "data" / "app_data.xlsx",
+    PROJECT_ROOT / "data" / "app_data.csv",
+]
+OUTPUT_PATH = PROJECT_ROOT / "data" / "processed" / "data.csv"
+DROP_COLUMNS = [
+    "Segmented_Neutrophils",
+    "Appendix_Wall_Layers",
+    "Target_Sign",
+    "Appendicolith",
+    "Perfusion",
+    "Perforation",
+    "Surrounding_Tissue_Reaction",
+    "Appendicular_Abscess",
+    "Abscess_Location",
+    "Pathological_Lymph_Nodes",
+    "Lymph_Nodes_Location",
+    "Bowel_Wall_Thickening",
+    "Conglomerate_of_Bowel_Loops",
+    "Ileus",
+    "Coprostasis",
+    "Meteorism",
+    "Enteritis",
+    "Gynecological_Findings",
+]
+REQUIRED_COLUMNS = [
+    "Age",
+    "Sex",
+    "Body_Temperature",
+    "WBC_Count",
+    "Neutrophil_Percentage",
+    "CRP",
+    "Lower_Right_Abd_Pain",
+    "Diagnosis",
+]
 
-# Supprimer les colonnes qui contiennent trop de valeurs manquantes ou qui ne sont pas suffisamment fiables pour l'analyse
-data = data.drop(columns=[
-"Segmented_Neutrophils",
-"Appendix_Wall_Layers",
-"Target_Sign",
-"Appendicolith",
-"Perfusion",
-"Perforation",
-"Surrounding_Tissue_Reaction",
-"Appendicular_Abscess",
-"Abscess_Location",
-"Pathological_Lymph_Nodes",
-"Lymph_Nodes_Location",
-"Bowel_Wall_Thickening",
-"Conglomerate_of_Bowel_Loops",
-"Ileus",
-"Coprostasis",
-"Meteorism",
-"Enteritis",
-"Gynecological_Findings"
-])
 
-# Supprimer les lignes (patients) pour lesquelles certaines variables essentielles au diagnostic de l'appendicite sont manquantes
-data = data.dropna(subset=[
-"Age",
-"Sex",
-"Body_Temperature",
-"WBC_Count",
-"Neutrophil_Percentage",
-"CRP",
-"Lower_Right_Abd_Pain",
-"Diagnosis"
-])
+def find_raw_dataset() -> Path:
+    for path in RAW_DATA_CANDIDATES:
+        if path.exists() and path.stat().st_size > 0:
+            return path
+    raise FileNotFoundError(
+        "Raw dataset not found. Add data/app_data.xlsx or data/app_data.csv before running data_processing.py."
+    )
 
-# Sélectionner les colonnes numériques
-num_cols = data.select_dtypes(include=['float64','int64']).columns
 
-# appliquer winsorization (ex: couper les 5% les plus extrêmes) pour éliminer les valeurs outliers
-for col in num_cols:
-    data[col] = winsorize(data[col], limits=[0.05, 0.05])
+def load_raw_dataset(path: Path) -> pd.DataFrame:
+    if path.suffix.lower() == ".csv":
+        data = pd.read_csv(path)
+    else:
+        data = pd.read_excel(path, engine="openpyxl")
 
-# Séparer les variables explicatives  de la variable cible
+    if data.empty:
+        raise ValueError(f"The raw dataset at {path} is empty.")
 
-# Variables contient toutes les caractéristiques cliniques utilisées pour prédire la maladie
-Variables = data.drop("Diagnosis", axis=1)
+    print(f"Raw dataset loaded successfully: {data.shape}")
+    return data
 
-#  Contenir la variable cible que le modèle devra prédire, ici le diagnostic d'appendicite
-ValeurCible = data["Diagnosis"]
 
-# Vérifier combien d'éléments pour les deux catégories du diagnostic: appendicite et non appendicite
-print(ValeurCible.value_counts())
-# On trouve qu'on a 398 pour appendicite et 274 pour non appendicite : c'et un déséquilibre à régler
+def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
+    cleaned = data.drop(columns=DROP_COLUMNS, errors="ignore").copy()
 
-#Séparation des deux catégories
-appendicitis = data[ValeurCible == 'appendicitis']
-non_appendicitis = data[ValeurCible != 'appendicitis']
+    missing_required = [column for column in REQUIRED_COLUMNS if column not in cleaned.columns]
+    if missing_required:
+        raise ValueError(
+            f"Missing required columns in raw dataset: {', '.join(missing_required)}"
+        )
 
-# On opte pour du sur-échantillonage pour avoir la même taille de catégories
-max_len = max(len(appendicitis), len(non_appendicitis))
-appendicitis_balanced = appendicitis.sample(max_len, replace=True, random_state=42)
-non_appendicitis_balanced = non_appendicitis.sample(max_len, replace=True, random_state=42)
-data_processed_and_balanced = pd.concat([appendicitis_balanced, non_appendicitis_balanced])
-data_processed_and_balanced = data_processed_and_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
+    cleaned = cleaned.dropna(subset=REQUIRED_COLUMNS).copy()
+    if cleaned.empty:
+        raise ValueError("No rows remain after dropping records with missing required fields.")
 
-# Vérifier la nouvelle distribution
-print(data_processed_and_balanced['Diagnosis'].value_counts())
+    numeric_columns = cleaned.select_dtypes(include=["number"]).columns.tolist()
+    for column in numeric_columns:
+        cleaned[column] = winsorize(cleaned[column], limits=[0.05, 0.05])
 
-#Sauvegarder la data traitée et équilibrée
-data_processed_and_balanced.to_excel("data/data_processed_and_balanced.xlsx", index=False, engine="openpyxl")
+    target = cleaned["Diagnosis"].astype(str).str.strip().str.lower()
+    appendicitis = cleaned[target == "appendicitis"]
+    non_appendicitis = cleaned[target != "appendicitis"]
+
+    if appendicitis.empty or non_appendicitis.empty:
+        raise ValueError("The dataset must contain at least two diagnosis classes.")
+
+    max_len = max(len(appendicitis), len(non_appendicitis))
+    appendicitis_balanced = appendicitis.sample(max_len, replace=True, random_state=42)
+    non_appendicitis_balanced = non_appendicitis.sample(
+        max_len, replace=True, random_state=42
+    )
+
+    processed = pd.concat([appendicitis_balanced, non_appendicitis_balanced])
+    processed = processed.sample(frac=1, random_state=42).reset_index(drop=True)
+
+    print("Processed dataset shape:", processed.shape)
+    print(processed["Diagnosis"].value_counts())
+    return processed
+
+
+def save_processed_dataset(data: pd.DataFrame) -> None:
+    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    data.to_csv(OUTPUT_PATH, index=False)
+    print(f"Processed dataset saved to {OUTPUT_PATH}")
+
+
+def main() -> None:
+    raw_path = find_raw_dataset()
+    raw_data = load_raw_dataset(raw_path)
+    processed_data = preprocess_data(raw_data)
+    save_processed_dataset(processed_data)
+
+
+if __name__ == "__main__":
+    main()
