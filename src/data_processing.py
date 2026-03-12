@@ -140,9 +140,15 @@ def optimize_memory(df):
     # Retourner le DataFrame optimisé
     return df
 
-def save_processed_data(df, filepath="data/data_processed_and_balanced.xlsx"):
+def save_processed_data(df):
     """Sauvegarde le dataset traité"""
-    df.to_excel(filepath, index=False, engine="openpyxl")
+    import os
+    os.makedirs("data/processed", exist_ok=True)
+
+    df.to_excel("data/data_processed_and_balanced.xlsx", index=False, engine="openpyxl")
+    df.to_csv("data/processed/data.csv", index=False)
+
+    print("Saved Excel and CSV versions of processed dataset")
 
 if __name__ == "__main__":
 
