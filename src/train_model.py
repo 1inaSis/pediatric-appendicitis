@@ -1,6 +1,5 @@
-"""
-Train and compare multiple ML models for pediatric appendicitis diagnosis.
-"""
+"""Script pour entraîner et comparer plusieurs modèles de Machine Learning pour le diagnostic d'appendicite pédiatrique.
+Utilise les données traitées par data_processing.py (Sara)."""
 
 from pathlib import Path
 

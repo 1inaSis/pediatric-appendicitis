@@ -3,14 +3,18 @@ from pathlib import Path
 import pandas as pd
 from scipy.stats.mstats import winsorize
 
+# Charger le dataset Excel contenant les données cliniques des patients
+def load_data(filepath="data/app_data.xlsx"):
+    data = pd.read_excel(filepath, engine="openpyxl")
+    return data
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-RAW_DATA_CANDIDATES = [
-    PROJECT_ROOT / "data" / "app_data.xlsx",
-    PROJECT_ROOT / "data" / "app_data.csv",
-]
-OUTPUT_PATH = PROJECT_ROOT / "data" / "processed" / "data.csv"
-DROP_COLUMNS = [
+
+def process_data(data):
+    # Indiquer les variables avec leur nombre de valeurs manquantes
+    print(data.isnull().sum())
+
+    # Supprimer les colonnes qui contiennent trop de valeurs manquantes ou qui ne sont pas suffisamment fiables pour l'analyse
+    data = data.drop(columns=[
     "Segmented_Neutrophils",
     "Appendix_Wall_Layers",
     "Target_Sign",
@@ -28,9 +32,11 @@ DROP_COLUMNS = [
     "Coprostasis",
     "Meteorism",
     "Enteritis",
-    "Gynecological_Findings",
-]
-REQUIRED_COLUMNS = [
+    "Gynecological_Findings"
+    ])
+
+    # Supprimer les lignes (patients) pour lesquelles certaines variables essentielles au diagnostic de l'appendicite sont manquantes
+    data = data.dropna(subset=[
     "Age",
     "Sex",
     "Body_Temperature",
@@ -38,100 +44,108 @@ REQUIRED_COLUMNS = [
     "Neutrophil_Percentage",
     "CRP",
     "Lower_Right_Abd_Pain",
-    "Diagnosis",
-]
+    "Diagnosis"
+    ])
 
+    # Sélectionner les colonnes numériques
+    num_cols = data.select_dtypes(include=['float64','int64']).columns
 
-def find_raw_dataset() -> Path:
-    for path in RAW_DATA_CANDIDATES:
-        if path.exists() and path.stat().st_size > 0:
-            return path
-    raise FileNotFoundError(
-        "Raw dataset not found. Add data/app_data.xlsx or data/app_data.csv before running data_processing.py."
-    )
+    # appliquer winsorization (ex: couper les 5% les plus extrêmes) pour éliminer les valeurs outliers
+    for col in num_cols:
+        data[col] = winsorize(data[col], limits=[0.05, 0.05])
 
+    # Séparer les variables explicatives  de la variable cible
 
-def load_raw_dataset(path: Path) -> pd.DataFrame:
-    if path.suffix.lower() == ".csv":
-        data = pd.read_csv(path)
-    else:
-        data = pd.read_excel(path, engine="openpyxl")
+    # Variables contient toutes les caractéristiques cliniques utilisées pour prédire la maladie
+    Variables = data.drop("Diagnosis", axis=1)
 
-    if data.empty:
-        raise ValueError(f"The raw dataset at {path} is empty.")
+    #  Contenir la variable cible que le modèle devra prédire, ici le diagnostic d'appendicite
+    ValeurCible = data["Diagnosis"]
 
-    print(f"Raw dataset loaded successfully: {data.shape}")
-    return data
+    # Vérifier combien d'éléments pour les deux catégories du diagnostic: appendicite et non appendicite
+    print(ValeurCible.value_counts())
+    # On trouve qu'on a 398 pour appendicite et 274 pour non appendicite : c'et un déséquilibre à régler
 
+    #Séparation des deux catégories
+    appendicitis = data[ValeurCible == 'appendicitis']
+    non_appendicitis = data[ValeurCible != 'appendicitis']
 
-def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
-    cleaned = data.drop(columns=DROP_COLUMNS, errors="ignore").copy()
-
-    missing_required = [column for column in REQUIRED_COLUMNS if column not in cleaned.columns]
-    if missing_required:
-        raise ValueError(
-            f"Missing required columns in raw dataset: {', '.join(missing_required)}"
-        )
-
-    cleaned = cleaned.dropna(subset=REQUIRED_COLUMNS).copy()
-    if cleaned.empty:
-        raise ValueError("No rows remain after dropping records with missing required fields.")
-
-    numeric_columns = cleaned.select_dtypes(include=["number"]).columns.tolist()
-    categorical_columns = [
-        column
-        for column in cleaned.select_dtypes(include=["object", "string", "category"]).columns
-        if column != "Diagnosis"
-    ]
-
-    if numeric_columns:
-        cleaned[numeric_columns] = cleaned[numeric_columns].apply(
-            lambda column: column.fillna(column.median())
-        )
-    for column in categorical_columns:
-        mode = cleaned[column].mode(dropna=True)
-        fill_value = mode.iloc[0] if not mode.empty else "unknown"
-        cleaned[column] = cleaned[column].fillna(fill_value).astype(str)
-
-    for column in numeric_columns:
-        cleaned[column] = winsorize(cleaned[column], limits=[0.05, 0.05])
-
-    for column in categorical_columns:
-        cleaned[column] = cleaned[column].astype("category").cat.codes
-
-    target = cleaned["Diagnosis"].astype(str).str.strip().str.lower()
-    appendicitis = cleaned[target == "appendicitis"]
-    non_appendicitis = cleaned[target != "appendicitis"]
-
-    if appendicitis.empty or non_appendicitis.empty:
-        raise ValueError("The dataset must contain at least two diagnosis classes.")
-
+    # On opte pour du sur-échantillonage pour avoir la même taille de catégories
     max_len = max(len(appendicitis), len(non_appendicitis))
     appendicitis_balanced = appendicitis.sample(max_len, replace=True, random_state=42)
-    non_appendicitis_balanced = non_appendicitis.sample(
-        max_len, replace=True, random_state=42
-    )
+    non_appendicitis_balanced = non_appendicitis.sample(max_len, replace=True, random_state=42)
+    data_processed_and_balanced = pd.concat([appendicitis_balanced, non_appendicitis_balanced])
+    data_processed_and_balanced = data_processed_and_balanced.sample(frac=1, random_state=42).reset_index(drop=True)
 
-    processed = pd.concat([appendicitis_balanced, non_appendicitis_balanced])
-    processed = processed.sample(frac=1, random_state=42).reset_index(drop=True)
+    # Vérifier la nouvelle distribution
+    print(data_processed_and_balanced['Diagnosis'].value_counts())
 
-    print("Processed dataset shape:", processed.shape)
-    print(processed["Diagnosis"].value_counts())
-    return processed
+    return data_processed_and_balanced
 
+def optimize_memory(df):
+    """
+    Cette fonction réduit l'utilisation mémoire d'un DataFrame
+    en convertissant les types numériques vers des types plus petits.
 
-def save_processed_dataset(data: pd.DataFrame) -> None:
-    OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    data.to_csv(OUTPUT_PATH, index=False)
-    print("Processed dataset saved to data/processed/data.csv")
+    Par exemple :
+    int64  → int32 ou int16
+    float64 → float32
 
+    
+    """
 
-def main() -> None:
-    raw_path = find_raw_dataset()
-    raw_data = load_raw_dataset(raw_path)
-    processed_data = preprocess_data(raw_data)
-    save_processed_dataset(processed_data)
+    # Calcul de la mémoire utilisée avant optimisation (en MB)
+    start_mem = df.memory_usage().sum() / 1024**2
 
+    # sélectionner uniquement les colonnes numériques
+    num_cols = df.select_dtypes(include=[np.number]).columns
+
+    # Parcours de toutes les colonnes numériques du DataFrame
+    for col in num_cols:
+            col_type = df[col].dtype
+    
+            # Trouver la valeur minimale et maximale de la colonne
+            c_min = df[col].min()
+            c_max = df[col].max()
+
+            # Traitement des colonnes entières
+            if str(col_type)[:3] == "int":
+
+                # Si les valeurs tiennent dans int8
+                if c_min > np.iinfo(np.int8).min and c_max < np.iinfo(np.int8).max:
+                    df[col] = df[col].astype(np.int8)
+
+                # Sinon vérifier int16
+                elif c_min > np.iinfo(np.int16).min and c_max < np.iinfo(np.int16).max:
+                    df[col] = df[col].astype(np.int16)
+
+                # Sinon vérifier int32
+                elif c_min > np.iinfo(np.int32).min and c_max < np.iinfo(np.int32).max:
+                    df[col] = df[col].astype(np.int32)
+
+            # Traitement des colonnes flottantes
+            else:
+                # Conversion vers float32 pour réduire la mémoire
+                df[col] = df[col].astype(np.float32)
+
+    # Calcul de la mémoire utilisée après optimisation
+    end_mem = df.memory_usage().sum() / 1024**2
+
+    # Affichage des résultats
+    print(f"Memory usage before optimization: {start_mem:.2f} MB")
+    print(f"Memory usage after optimization: {end_mem:.2f} MB")
+    #On passe de 0,24 MB à 0,19 MB
+
+    # Retourner le DataFrame optimisé
+    return df
+
+def save_processed_data(df, filepath="data/data_processed_and_balanced.xlsx"):
+    """Sauvegarde le dataset traité"""
+    df.to_excel(filepath, index=False, engine="openpyxl")
 
 if __name__ == "__main__":
-    main()
+
+    data = load_data()
+    data = process_data(data)
+    data = optimize_memory(data)
+    save_processed_data(data)
