@@ -84,8 +84,6 @@ We implemented a simple test to make sure that the function **optimize_memory()*
 
 ### Prompt engineering
 
-### Prompt Engineering Example
-
 - During the data preprocessing stage, we used prompt engineering  to explore different strategies for handling outliers in the dataset.
 
 An initial prompt was used to ask for possible methods to treat extreme values in numerical medical variables. The suggested approaches included the **Interquartile Range (IQR) method**, winsorization, and standard statistical filtering.
