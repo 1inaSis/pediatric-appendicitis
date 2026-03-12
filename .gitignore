@@ -1,9 +1,8 @@
-# Crée .gitignore
-echo "venv/
+venv/
+.venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
 *.pkl
 data/
-.env" > .gitignore
-
+.env
