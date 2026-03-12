@@ -98,8 +98,119 @@ After analyzing these options, we selected oversampling as the most appropriate 
 
 
 ## 6- ML Models 
+### Models Trained
+I trained and compared four machine learning models on the processed 
+and balanced dataset prepared by Sara (data_processed_and_balanced.xlsx), 
+which contained 796 patients and 39 features, with a perfectly balanced 
+target variable (398 appendicitis / 398 no appendicitis).
+
+I split the data into 80% for training (636 patients) and 20% for 
+testing (160 patients) using stratified splitting to preserve the 
+class distribution.
+
+### Performance Results
+
+| Model | Accuracy | ROC-AUC | Precision | Recall | F1-Score |
+|---|---|---|---|---|---|
+| SVM | 0.7937 | 0.8073 | 0.9123 | 0.6500 | 0.7591 |
+| Random Forest | 0.9812 | 0.9995 | 1.0000 | 0.9625 | 0.9809 |
+| LightGBM | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+| CatBoost | 1.0000 | 1.0000 | 1.0000 | 1.0000 | 1.0000 |
+
+### Final Model Selection
+I automatically selected **LightGBM** as the best model based on the 
+highest ROC-AUC score of 1.0. In a medical context, I prioritized 
+Recall over Precision because missing a real appendicitis case 
+(false negative) is far more dangerous than a false alarm 
+(false positive). LightGBM achieved a perfect Recall of 1.0, 
+meaning it missed zero real appendicitis cases in the test set.
+
+The best model is saved at: `models/best_model.pkl`  
+The feature names are saved at: `models/feature_names.pkl`
+
+### Critical Question — Was the dataset balanced?
+The original dataset contained 463 appendicitis cases (59%) and 
+317 no appendicitis cases (41%), which represented a moderate 
+imbalance. Sara applied oversampling to balance both classes to 
+398 each. After balancing, all model performances improved 
+significantly — LightGBM and CatBoost both reached a perfect 
+score of 1.0. However, this perfect score may partially indicate 
+overfitting due to the oversampling technique, which should be 
+analyzed further with cross-validation.
+
+### Critical Question — Which ML model performed best?
+LightGBM performed best with a ROC-AUC of 1.0, Accuracy of 1.0, 
+Precision of 1.0, Recall of 1.0, and F1-Score of 1.0 on the 
+balanced test set. Random Forest was a close second with a 
+ROC-AUC of 0.9995.
+
+---
+
+### Task Selected: Universal data preparation function `auto_prepare_data()`
+## Prompt Engineering
+**Exact prompt used:**
+> "Write a universal Python function called auto_prepare_data(filepath, 
+> target_col=None) that works with ANY dataset. It should:
+> - Automatically detect CSV or Excel format by file extension
+> - Auto-detect the target column if not specified by searching for 
+>   keywords like 'diagnosis', 'target', 'label', 'outcome'
+> - Handle missing values using median imputation
+> - Encode categorical columns automatically using LabelEncoder
+> - Map text labels like 'appendicitis' to 1 and 'no appendicitis' 
+>   to 0 using explicit string mapping after converting to lowercase
+> - Return X features and y target as integers ready for ML training"
+
+**Result obtained:**
+The generated function worked with any dataset format and 
+automatically handled all preprocessing steps. It correctly 
+detected the Diagnosis column and encoded the target variable.
+
+**What worked well:**
+Being very specific about the expected string mapping behavior 
+(lowercase conversion before mapping) was the key to solving the 
+encoding bug where 'appendicitis' was not being mapped to 1 
+correctly due to pandas StringArray dtype differences in newer 
+pandas versions.
+
+**What I would improve:**
+I would specify in the prompt to always convert the target column 
+using `.astype(str).str.strip().str.lower()` before any mapping 
+operation, which would have avoided the encoding bug I encountered 
+during testing where the distribution showed `{0: 780}` instead 
+of the expected `{1: 463, 0: 317}`.
 
 ## 7- Model evaluation 
+I evaluated the best saved model by generating three diagnostic 
+outputs stored in the `results/` folder.
+
+### Confusion Matrix
+The confusion matrix shows that LightGBM correctly identified all 
+appendicitis and no appendicitis cases in the test set with zero 
+false negatives — which is critical in a medical context where 
+missing a real appendicitis case can have serious consequences.
+
+### ROC Curve
+The ROC curve confirms the perfect discrimination ability of the 
+model with an AUC of 1.0, meaning it perfectly separates the two 
+classes across all classification thresholds.
+
+### Classification Report
+The classification report shows perfect precision, recall, and 
+F1-score of 1.0 for both classes on the balanced test set.
+
+Results saved in:
+- `results/confusion_matrix.png`
+- `results/roc_curve.png`
+- `results/classification_report.txt`
+
+### CI/CD Pipeline
+I set up a GitHub Actions CI/CD pipeline in 
+`.github/workflows/ci.yml` that automatically installs all 
+dependencies and runs the pytest test suite on every push to main, 
+ensuring the codebase remains stable and reproducible throughout 
+the project.
+
+---
 
 ## 8- SHAP analysis 
 
@@ -107,8 +218,69 @@ After analyzing these options, we selected oversampling as the most appropriate 
 
 ## 10- Project structure
 
+pediatric-appendicitis/
+├── .github/
+│   └── workflows/
+│       └── ci.yml              ← CI/CD pipeline 
+├── app/
+│   └── app.py                  ← Streamlit interface 
+├── data/
+│   ├── app_data.xlsx           ← Original dataset
+│   └── data_processed_and_balanced.xlsx  
+├── models/
+│   ├── best_model.pkl          ← Best model saved 
+│   └── feature_names.pkl       ← Feature names 
+├── notebooks/
+│   └── eda.ipynb               ← Exploratory analysis
+├── results/
+│   ├── confusion_matrix.png   
+│   ├── roc_curve.png           
+│   └── classification_report.txt 
+├── src/
+│   ├── data_processing.py      
+│   ├── train_model.py          
+│   └── evaluate_model.py       
+├── tests/
+│   └── test_data_processing.py ← Automated tests 
+├── requirements.txt
+└── README.md
+```
+
+---
+
 ## 11- Installation
 
-## 12- Model training
+```bash
+git clone https://github.com/1inaSis/pediatric-appendicitis.git
+cd pediatric-appendicitis
+pip install -r requirements.txt
+```
 
+---
+
+## 12- Model training
+```bash
+python src/train_model.py
+```
+
+This will:
+- Load the processed dataset from `data/data_processed_and_balanced.xlsx`
+- Train and compare SVM, Random Forest, LightGBM, and CatBoost
+- Automatically select the best model based on ROC-AUC
+- Save the best model to `models/best_model.pkl`
+- Save feature names to `models/feature_names.pkl`
+
+To evaluate the model and generate result plots:
+```bash
+python src/evaluate_model.py
+```
+
+---
 ## 13- App launch
+```bash
+streamlit run app/app.py
+```
+
+The app will open at: `http://localhost:8501`
+
+---
