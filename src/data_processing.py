@@ -78,8 +78,26 @@ def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
         raise ValueError("No rows remain after dropping records with missing required fields.")
 
     numeric_columns = cleaned.select_dtypes(include=["number"]).columns.tolist()
+    categorical_columns = [
+        column
+        for column in cleaned.select_dtypes(include=["object", "string", "category"]).columns
+        if column != "Diagnosis"
+    ]
+
+    if numeric_columns:
+        cleaned[numeric_columns] = cleaned[numeric_columns].apply(
+            lambda column: column.fillna(column.median())
+        )
+    for column in categorical_columns:
+        mode = cleaned[column].mode(dropna=True)
+        fill_value = mode.iloc[0] if not mode.empty else "unknown"
+        cleaned[column] = cleaned[column].fillna(fill_value).astype(str)
+
     for column in numeric_columns:
         cleaned[column] = winsorize(cleaned[column], limits=[0.05, 0.05])
+
+    for column in categorical_columns:
+        cleaned[column] = cleaned[column].astype("category").cat.codes
 
     target = cleaned["Diagnosis"].astype(str).str.strip().str.lower()
     appendicitis = cleaned[target == "appendicitis"]
@@ -105,7 +123,7 @@ def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
 def save_processed_dataset(data: pd.DataFrame) -> None:
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     data.to_csv(OUTPUT_PATH, index=False)
-    print(f"Processed dataset saved to {OUTPUT_PATH}")
+    print("Processed dataset saved to data/processed/data.csv")
 
 
 def main() -> None:

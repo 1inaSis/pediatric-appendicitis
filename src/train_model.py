@@ -61,19 +61,18 @@ def _encode_target(target: pd.Series) -> pd.Series:
 
 def load_processed_data() -> tuple[pd.DataFrame, pd.Series]:
     if not DATA_PATH.exists():
-        raise FileNotFoundError(f"Dataset not found at {DATA_PATH}.")
-    if DATA_PATH.stat().st_size == 0:
-        print("Dataset is empty. Run data_processing.py first.")
-        raise ValueError(
-            "Dataset is empty. Run data_processing.py first. The dataset must be generated before training."
+        print("Dataset missing or empty. Run data_processing.py first.")
+        raise FileNotFoundError(
+            "Dataset missing or empty. Run data_processing.py first."
         )
+    if DATA_PATH.stat().st_size == 0:
+        print("Dataset missing or empty. Run data_processing.py first.")
+        raise ValueError("Dataset missing or empty. Run data_processing.py first.")
 
     data = pd.read_csv("data/processed/data.csv")
     if data.empty:
-        print("Dataset is empty. Run data_processing.py first.")
-        raise ValueError(
-            "Dataset is empty. Run data_processing.py first. The dataset must be generated before training."
-        )
+        print("Dataset missing or empty. Run data_processing.py first.")
+        raise ValueError("Dataset missing or empty. Run data_processing.py first.")
 
     print(f"Dataset loaded successfully: {data.shape}")
 
