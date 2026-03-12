@@ -74,6 +74,30 @@ Finally, we optimized to reduce memory usage. Numerical columns are converted to
 
 After preprocessing and balancing, we saved the final dataset as a new Excel file. This processed dataset is then used for training and evaluating the machine learning models.
 
+### Test data-processing
+
+In order to be sure that our data was correctly processed, we implemented a test which verifies that the dataset isn't empty, that it doesn't have too much missing values and that it is alanced. The results of those tests were successful and it allowed us therefore to push it in the repository.
+
+### Test memory optimization
+
+We implemented a simple test to make sure that the function **optimize_memory()** really reduces the memory capacity of the dataset and doesn't do something to increase it.
+
+### Prompt engineering
+
+### Prompt Engineering Example
+
+- During the data preprocessing stage, we used prompt engineering  to explore different strategies for handling outliers in the dataset.
+
+An initial prompt was used to ask for possible methods to treat extreme values in numerical medical variables. The suggested approaches included the **Interquartile Range (IQR) method**, winsorization, and standard statistical filtering.
+
+After reviewing the results, one limitation of the IQR-based approach was identified: it removes observations that fall outside a defined range. In a medical dataset with a limited number of patients, removing rows could result in the loss of potentially important clinical information.
+
+To address this issue, we refined the prompt to focus on methods that preserve all observations while still reducing the influence of extreme values. Based on this analysis, we selected **winsorization**  because it limits extreme values without removing patient records, making it more suitable for this dataset.
+
+- We used another prompt to explore strategies for handling class imbalance in the dataset. The suggested approaches included undersampling, oversampling, and synthetic data generation methods such as SMOTE.
+
+After analyzing these options, we selected oversampling as the most appropriate solution for this project. Undersampling would have reduced the number of available observations, while more complex techniques like SMOTE were not necessary given the moderate imbalance of the dataset. Oversampling allowed us to balance the classes while preserving all the original information.
+
 
 ## 6- ML Models 
 
