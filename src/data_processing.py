@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pandas as pd
+import numpy as np
 from scipy.stats.mstats import winsorize
 
 # Charger le dataset Excel contenant les données cliniques des patients
