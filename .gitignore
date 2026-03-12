@@ -1,11 +1,6 @@
-venv/
 .venv/
+venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
 *.pkl
-catboost_info/
-outputs/
-models/
-data/
-.env
