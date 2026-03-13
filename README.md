@@ -85,6 +85,10 @@ Sex	                       2	                         0.26%
 ### Target Variable Analysis
 
 -The analysis of the target variable Diagnosis reveals critical insights into the dataset's class distribution. As shown in the notebook, the dataset contains 782 patients with the following distribution:
+| Colonne 1 | Colonne 2 | Colonne 3 |
+|-----------|-----------|-----------|
+| valeur 1  | valeur 2  | valeur 3  |
+| valeur 4  | valeur 5  | valeur 6  |
 
 Diagnosis	                           Count	                          Percentage
 Appendicitis	                         463	                            59.4%
