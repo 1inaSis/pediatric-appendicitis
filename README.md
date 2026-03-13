@@ -576,7 +576,7 @@ These visualizations were then integrated into the application interface in orde
 
 ## 9- Web interface 
 
-An explainable AI-powered web application for supporting the diagnosis of appendicitis in pediatric patients.
+An explainable AI-powered web application for supporting the diagnosis of appendicitis in pediatric patients, made to facilitate the decision making of patients.
 
 ### Project Overview
 
@@ -599,7 +599,7 @@ PediAppend uses machine learning to predict the probability of appendicitis in c
 ### Input Features
 
 | Feature | Description |
-|--------|-------------|
+|--------|--------------|
 | Age | Patient age in years |
 | Sex | Male / Female |
 | Migratory Pain | Pain moving to lower right |
