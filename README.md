@@ -275,7 +275,7 @@ Thanks to this deeper understanding, I was able to:
 
 -Clearly document results for the team
   
-### Correlation Analysis###
+### Correlation Analysis
 
 As part of our exploratory data analysis on appendicitis, we dedicated a significant section to studying correlations between different variables in the dataset. This analysis aims to identify potential linear relationships between numerical variables, which is crucial for understanding the underlying structure of the data and for preparing potential subsequent modeling. The main objective was to detect possible multicollinearity issues that could affect the performance of predictive models.
 
