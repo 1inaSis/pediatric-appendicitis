@@ -26,25 +26,38 @@ More specifically, the project aims to:
 
 ## 3- Dataset 
 
+-Link to the original dataset: https://archive.ics.uci.edu/dataset/938/regensburg+pediatric+appendicitis
+
 -The dataset contains 782 patients, which represents a satisfactory sample size for a medical study.
 It includes 56 variables, indicating a rich dataset with many clinical characteristics.
+
 -The dataset is well structured, with explanatory variables (features) and target variables (labels) separated, which facilitates data analysis and machine learning preparation.
+
 -Among the variables:
+
     * 39 variables are of type object:
 These are categorical (qualitative) variables representing symptoms, diagnoses, or clinical characteristics expressed as text or categories.
+
     * 17 variables are of type float64:
 These are numerical (quantitative) variables, such as age, weight, or biological measurements.
+
 -The 56 variables include several types of medical information:
+
    Demographic data
 Age/Sex/Height/Weight/BMI
+
    Clinical scores
 Alvarado Score/Pediatric Appendicitis Score
+
    Symptoms
 Migratory Pain/Nausea/Loss of Appetite/Dysuria
+
    Biological examinations
 WBC Count/Neutrophil Percentage/CRP/RBC in Urine
+
    Imaging results
 Appendix on Ultrasound (US)/Appendix Diameter/Free Fluids
+
    Target variables
 Diagnosis/Management/Severity
 
@@ -53,6 +66,7 @@ Diagnosis/Management/Severity
 ### Missing Values Analysis
 
  The dataset contains missing values in most variables, which is common in real clinical datasets where not all tests are performed for every patient.
+
  -Out of the 56 total variables, all except two (likely identifiers) contain missing values.
 
  **Variables with a very high number of missing values**
@@ -86,7 +100,9 @@ These variables cannot be directly used in a predictive model, because the large
 | Sex	         |     2	  |        0.26%  |
 
 -The essential variables (such as diagnosis, age, and sex) are almost complete.
+
 -Only 2 patients out of 782 (0.26%) have a missing diagnosis, meaning that these rows can be safely removed without significant data loss.
+
 -Similarly, age is missing for only one patient (0.13%), which has minimal impact on the dataset.
 
 ### Target Variable Analysis
@@ -107,26 +123,38 @@ The dataset presents a moderate class imbalance with an 18.8% difference between
 ***Impact on Modeling***
 
 This imbalance has important implications for the machine learning phase:
+
 -Accuracy alone will not be a reliable metric, as a model predicting "appendicitis" for all cases would achieve 59.4% accuracy
+
 -F1-score, precision, and recall must be monitored, particularly for the minority class (no appendicitis)
+
 -Class weighting techniques (class_weight='balanced') should be considered in models like Random Forest or Logistic Regression
+
 -Confusion matrix analysis will be essential to evaluate performance on both classes
 
 ### OUTLIER ANALYSIS ###
 
 Outlier analysis is a crucial step in any machine learning project, particularly in a medical context. This analysis aims to identify extreme values that could:
+
    -Distort descriptive statistics (mean, standard deviation)
    -Disproportionately influence machine learning models
+
    -Represent rare but important clinical cases to preserve
+
    -Reveal data entry errors in the dataset
 
  ***Visualization with Boxplots***
 
 Boxplots were created for each numerical variable to visualize:
+
  -The median (center line)
+
  -Quartiles (Q1 and Q3) forming the box
+
  -The interquartile range (IQR)
+
  -Whiskers representing normal value limits
+
  -Points beyond whiskers (potential outliers)
 
  ***Quantification with the IQR Method***
@@ -158,59 +186,93 @@ Total: 14 variables present outliers, with rates ranging from 1.15% to 10.87%.
 ***Medical Interpretation of Results***
 
 -CRP (C-Reactive Protein) - 10.87% outliers
+
   Normal values: generally < 5 mg/L
+
   Observed values: up to 365 mg/L
+
   Interpretation: CRP is an inflammatory marker that can reach very high values during severe infections. These "outliers" actually represent clinically severe cases that are essential to retain
+
 -Length_of_Stay - 5.63% outliers
+
   Observed values: up to 28 days
+
   Interpretation: Extended stays correspond to complicated cases (perforated appendicitis, peritonitis) or post-operative complications.
+
 -BMI (Body Mass Index) - 2.94% outliers
+
   Observed values: up to 38.16
+
   Interpretation: These high values correspond to cases of severe obesity in children, clinically possible and important to retain.
+
 -Body_Temperature - 1.53% outliers
+
   Observed values: up to 40.2°C
+
   Interpretation: High fevers are important clinical signs of severe infection.
 
  ***PROMPT ENGINEERING: Understanding Boxplots and IQR Method***
 
  **Context of the Request**
 
-During this analysis, I wanted to deepen my understanding of boxplots and the IQR method to better interpret the results and explain them clearly in this documentation
+During this analysis, I wanted to deepen my understanding of boxplots and the IQR method to better interpret the results and explain them clearly in this documentation.
+
  -Initial Prompt (Question asked to AI):
+
  "why is it necessary to analyze outliers and what are boxplots and the IQR method"
 
    **AI Response**
 
 The AI provided a detailed explanation structured as follows:
+
    -Definition of outliers:
+
 "Outliers are extreme values significantly different from others. For example, if most patients are between 5 and 15 years old, a 50-year-old patient would be an outlier."
+
 3 main reasons to analyze outliers:
+
 Data entry errors: impossible values to correct
+
 Rare but real clinical cases: important to retain
+
 Impact on ML models: outliers can mislead algorithms
+
  -Explanation of boxplots:
+
 "A boxplot summarizes a distribution with 5 numbers: minimum, Q1, median, Q3, maximum. The box represents the interquartile range (IQR) containing 50% of the data."
+
  -Explanation of IQR method:
 
 IQR = Q3 - Q1
+
 Lower bound = Q1 - 1.5 × IQR
+
 Upper bound = Q3 + 1.5 × IQR
+
 OUTLIER = Any value < lower bound OR > upper bound
 
    **Changes and Improvements Made**
 
 Following this explanation, I was able to:
+
 -Understand the complementarity between boxplots (visualization) and IQR (quantification)
+
 -Correctly interpret the generated boxplot results
+
 -Validate the relevance of the 1.5 threshold as a statistical standard
+
 -Distinguish between "impossible" outliers (errors) and "clinically significant" outliers
 
  **Application to Our Analysis**
 
 Thanks to this deeper understanding, I was able to:
+
 -Classify outliers by type (biological vs potential errors)
+
 -Justify retaining CRP outliers (severe cases)
+
 -Identify variables requiring special attention
+
 -Clearly document results for the team
   
 ### Correlation Analysis###
@@ -226,11 +288,17 @@ In the second phase, we systematically identified pairs of variables with an abs
 ***Results of Strong Correlation Identification***
 
 The analysis revealed six pairs of variables with correlations above the 0.7 threshold. These pairs are, in descending order of correlation:
+
  -Height and Age with a correlation of 0.865
+
  -Weight and Body Mass Index (BMI) with a correlation of 0.859
+
  -Paediatric Appendicitis Score and Alvarado Score with a correlation of 0.832
+
  -Weight and Height with a correlation of 0.830
+
  -Weight and Age with a correlation of 0.766
+
  -Neutrophil Percentage and Alvarado Score with a correlation of 0.701
 
 ***Visualization and In-Depth Analysis***
@@ -242,10 +310,15 @@ The graphs clearly show the data dispersion and visually confirm the calculated 
 ***Decision-Making and Recommendations***
 
 Faced with these identified correlations, we developed a multi-level classification system to guide decision-making regarding the treatment of these variables in future analyses:
+
  -Correlations above 0.95: Considered critical, requiring mandatory removal of one variable
+
  -Correlations between 0.9 and 0.95: Very strong, strongly recommending removal of one variable
+
  -Correlations between 0.85 and 0.9: Strong, requiring careful monitoring in linear models
+
  -Correlations between 0.8 and 0.85: Moderate, acceptable but with recommendation to use robust models
+
  -Correlations below 0.8: Acceptable, requiring no specific action
 
 Based on this framework, we classified the identified pairs as follows:
@@ -362,15 +435,6 @@ meaning we missed zero real appendicitis cases in the test set.
 The best model is saved at: `models/best_model.pkl`  
 The feature names are saved at: `models/feature_names.pkl`
 
-### Critical Question — Was the dataset balanced?
-The original dataset contained 463 appendicitis cases (59%) and 
-317 no appendicitis cases (41%), which represented a moderate 
-imbalance. We applied oversampling to balance both classes to 
-398 each. After balancing, all model performances improved 
-significantly — LightGBM and CatBoost both reached a perfect 
-score of 1.0. However, this perfect score may partially indicate 
-overfitting due to the oversampling technique, which should be 
-analyzed further with cross-validation.
 
 ### Critical Question — Which ML model performed best?
 LightGBM performed best with a ROC-AUC of 1.0, Accuracy of 1.0, 
@@ -461,7 +525,6 @@ the project.
     ├── app/
     │   └── app.py
     ├── data/
-    │   ├── app_data.xlsx
     │   └── data_processed_and_balanced.xlsx
     ├── models/
     │   ├── best_model.pkl
