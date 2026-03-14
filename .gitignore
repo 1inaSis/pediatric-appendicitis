@@ -5,3 +5,4 @@ __pycache__/
 .ipynb_checkpoints/
 *.pkl
 app_data.xlsx
+.python-version
