@@ -584,7 +584,7 @@ PediAppend uses machine learning to predict the probability of appendicitis in c
 
 ### Features
 
-- AI-powered diagnosis prediction (Light GBM)
+- AI-powered diagnosis prediction (LightGBM)
 
 - 10 clinical input features
 
