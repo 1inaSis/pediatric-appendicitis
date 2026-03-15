@@ -653,6 +653,7 @@ docker run -p 8501:8501 pediappend
 git clone https://github.com/1inaSis/pediatric-appendicitis.git
 cd pediatric-appendicitis
 pip install -r requirements.txt
+python src/train_model.py
 streamlit run app/app.py
 ```
 
