@@ -575,6 +575,46 @@ Another prompt was used to determine how to integrate SHAP explanations into our
 These visualizations were then integrated into the application interface in order to make the model's predictions more transparent and interpretable.
 
 ## 9- Web interface 
+An explainable AI-powered web application for supporting the diagnosis of appendicitis in pediatric patients, made to facilitate the decision making of patients.
+
+### Project Overview
+
+PediAppend uses machine learning to predict the probability of appendicitis in children based on clinical, biological, and demographic features. The app provides real-time predictions with model performance metrics.
+
+### Features
+
+- AI-powered diagnosis prediction (LightGBM)
+
+- 10 clinical input features
+
+- Model performance visualization (ROC Curve, Confusion Matrix)
+
+- Clean medical-grade UI built with Streamlit
+
+- Dockerized for easy deployment
+
+- CI/CD pipeline with GitHub Actions
+
+### Input Features
+
+| Feature | Description |
+|--------|--------------|
+| Age | Patient age in years |
+| Sex | Male / Female |
+| Migratory Pain | Pain moving to lower right |
+| Nausea | Nausea or vomiting |
+| Loss of Appetite | Anorexia |
+| Body Temperature | In Celsius |
+| Contralateral Rebound | Rebound tenderness |
+| Ipsilateral Rebound | Ipsilateral tenderness |
+| WBC Count | White blood cell count |
+| CRP | C-reactive protein |
+
+### Docker
+```bash
+docker build -t pediappend .
+docker run -p 8501:8501 pediappend
+```
 
 
 
