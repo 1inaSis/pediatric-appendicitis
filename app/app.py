@@ -6,6 +6,62 @@ import os
 
 st.set_page_config(page_title="PediAppend", layout="wide", initial_sidebar_state="collapsed")
 
+st.markdown("""
+<style>
+
+/* Background */
+.stApp {
+    background-color: #0E1117;
+}
+
+/* Main text */
+html, body, [class*="css"]  {
+    color: #FFFFFF;
+}
+
+/* Buttons */
+.stButton>button {
+    background-color: #2563EB;
+    color: white;
+    border-radius: 8px;
+    border: none;
+}
+
+.stButton>button:hover {
+    background-color: #1D4ED8;
+    color: white;
+}
+
+/* Inputs */
+input, textarea {
+    background-color: #1F2937 !important;
+    color: white !important;
+}
+
+/* Select boxes */
+div[data-baseweb="select"] {
+    background-color: #1F2937 !important;
+    color: white !important;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background-color: #111827;
+}
+
+/* Tables */
+table {
+    color: white !important;
+}
+
+/* Headers */
+h1, h2, h3, h4 {
+    color: #F9FAFB;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 @st.cache_resource
 def load_model():
     model = joblib.load("models/best_model.pkl")
