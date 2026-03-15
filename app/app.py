@@ -6,6 +6,66 @@ import os
 
 st.set_page_config(page_title="PediAppend", layout="wide", initial_sidebar_state="collapsed")
 
+import streamlit as st
+
+st.set_page_config(
+    page_title="PediAppend",
+    layout="wide"
+)
+
+st.markdown("""
+<style>
+
+/* LIGHT MODE (default) */
+body {
+    background-color: white;
+    color: black;
+}
+
+/* DARK MODE */
+@media (prefers-color-scheme: dark) {
+
+    body {
+        background-color: black !important;
+        color: white !important;
+    }
+
+    p, span, label, div {
+        color: white !important;
+    }
+
+    h1, h2, h3, h4 {
+        color: white !important;
+    }
+
+    input, textarea {
+        background-color: #1a1a1a !important;
+        color: white !important;
+        border: 1px solid #444;
+    }
+
+    div[data-baseweb="select"] * {
+        color: white !important;
+        background-color: #1a1a1a !important;
+    }
+
+    .stCheckbox label {
+        color: white !important;
+    }
+
+    .stNumberInput label {
+        color: white !important;
+    }
+
+    .stRadio label {
+        color: white !important;
+    }
+
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 @st.cache_resource
 def load_model():
     model = joblib.load("models/best_model.pkl")
