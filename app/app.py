@@ -13,80 +13,54 @@ st.set_page_config(
     layout="wide"
 )
 
-# FIX DARK MODE TEXT VISIBILITY
 st.markdown("""
 <style>
 
-/* GLOBAL TEXT */
-html, body, [class*="css"] {
-    color: #1f2937;
+/* LIGHT MODE (default) */
+body {
+    background-color: white;
+    color: black;
 }
 
-/* FORCE TEXT COLOR */
-p, span, label, div {
-    color: #1f2937 !important;
-}
+/* DARK MODE */
+@media (prefers-color-scheme: dark) {
 
-/* HEADERS */
-h1, h2, h3, h4, h5 {
-    color: #111827 !important;
-}
+    body {
+        background-color: black !important;
+        color: white !important;
+    }
 
-/* METRIC CARDS */
-[data-testid="stMetric"] {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 15px;
-}
+    p, span, label, div {
+        color: white !important;
+    }
 
-/* INPUTS */
-input, textarea {
-    background-color: #ffffff !important;
-    color: #111827 !important;
-}
+    h1, h2, h3, h4 {
+        color: white !important;
+    }
 
-/* SELECT */
-div[data-baseweb="select"] * {
-    color: #111827 !important;
-}
+    input, textarea {
+        background-color: #1a1a1a !important;
+        color: white !important;
+        border: 1px solid #444;
+    }
 
-/* CHECKBOX LABELS */
-.stCheckbox label {
-    color: #111827 !important;
-}
+    div[data-baseweb="select"] * {
+        color: white !important;
+        background-color: #1a1a1a !important;
+    }
 
-/* NUMBER INPUT */
-.stNumberInput label {
-    color: #111827 !important;
-}
+    .stCheckbox label {
+        color: white !important;
+    }
 
-/* RADIO */
-.stRadio label {
-    color: #111827 !important;
-}
+    .stNumberInput label {
+        color: white !important;
+    }
 
-/* SIDEBAR */
-section[data-testid="stSidebar"] * {
-    color: #111827 !important;
-}
+    .stRadio label {
+        color: white !important;
+    }
 
-/* BUTTON */
-.stButton button {
-    background-color: #2563eb;
-    color: white;
-    border-radius: 8px;
-}
-
-.stButton button:hover {
-    background-color: #1d4ed8;
-}
-
-/* DIAGNOSIS CARD */
-.diagnosis-card {
-    background: #fff;
-    border-radius: 15px;
-    padding: 25px;
-    border: 2px solid #fca5a5;
 }
 
 </style>
