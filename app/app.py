@@ -6,57 +6,87 @@ import os
 
 st.set_page_config(page_title="PediAppend", layout="wide", initial_sidebar_state="collapsed")
 
+import streamlit as st
+
+st.set_page_config(
+    page_title="PediAppend",
+    layout="wide"
+)
+
+# FIX DARK MODE TEXT VISIBILITY
 st.markdown("""
 <style>
 
-/* Background */
-.stApp {
-    background-color: #0E1117;
+/* GLOBAL TEXT */
+html, body, [class*="css"] {
+    color: #1f2937;
 }
 
-/* Main text */
-html, body, [class*="css"]  {
-    color: #FFFFFF;
+/* FORCE TEXT COLOR */
+p, span, label, div {
+    color: #1f2937 !important;
 }
 
-/* Buttons */
-.stButton>button {
-    background-color: #2563EB;
+/* HEADERS */
+h1, h2, h3, h4, h5 {
+    color: #111827 !important;
+}
+
+/* METRIC CARDS */
+[data-testid="stMetric"] {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 15px;
+}
+
+/* INPUTS */
+input, textarea {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+}
+
+/* SELECT */
+div[data-baseweb="select"] * {
+    color: #111827 !important;
+}
+
+/* CHECKBOX LABELS */
+.stCheckbox label {
+    color: #111827 !important;
+}
+
+/* NUMBER INPUT */
+.stNumberInput label {
+    color: #111827 !important;
+}
+
+/* RADIO */
+.stRadio label {
+    color: #111827 !important;
+}
+
+/* SIDEBAR */
+section[data-testid="stSidebar"] * {
+    color: #111827 !important;
+}
+
+/* BUTTON */
+.stButton button {
+    background-color: #2563eb;
     color: white;
     border-radius: 8px;
-    border: none;
 }
 
-.stButton>button:hover {
-    background-color: #1D4ED8;
-    color: white;
+.stButton button:hover {
+    background-color: #1d4ed8;
 }
 
-/* Inputs */
-input, textarea {
-    background-color: #1F2937 !important;
-    color: white !important;
-}
-
-/* Select boxes */
-div[data-baseweb="select"] {
-    background-color: #1F2937 !important;
-    color: white !important;
-}
-
-/* Sidebar */
-section[data-testid="stSidebar"] {
-    background-color: #111827;
-}
-
-/* Tables */
-table {
-    color: white !important;
-}
-
-/* Headers */
-h1, h2, h3, h4 {
-    color: #F9FAFB;
+/* DIAGNOSIS CARD */
+.diagnosis-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 25px;
+    border: 2px solid #fca5a5;
 }
 
 </style>
