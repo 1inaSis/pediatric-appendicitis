@@ -332,6 +332,10 @@ hr { border-color: #e5e7eb !important; }
                 "US_Number": us_number, "Free_Fluids": 1 if free_fluids == "Yes" else 0,
             }])
             if model_loaded:
+                for col in feature_names:
+                    if col not in input_data.columns:
+                        input_data[col] = 0
+                input_data = input_data[feature_names]
                 proba = model.predict_proba(input_data)[0][1]
                 percent = int(proba * 100)
                 color = "#dc2626" if proba > 0.5 else "#16a34a"
