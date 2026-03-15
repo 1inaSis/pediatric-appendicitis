@@ -6,6 +6,66 @@ import os
 
 st.set_page_config(page_title="PediAppend", layout="wide", initial_sidebar_state="collapsed")
 
+import streamlit as st
+
+st.set_page_config(
+    page_title="PediAppend",
+    layout="wide"
+)
+
+st.markdown("""
+<style>
+
+/* LIGHT MODE (default) */
+body {
+    background-color: white;
+    color: black;
+}
+
+/* DARK MODE */
+@media (prefers-color-scheme: dark) {
+
+    body {
+        background-color: black !important;
+        color: white !important;
+    }
+
+    p, span, label, div {
+        color: white !important;
+    }
+
+    h1, h2, h3, h4 {
+        color: white !important;
+    }
+
+    input, textarea {
+        background-color: #1a1a1a !important;
+        color: white !important;
+        border: 1px solid #444;
+    }
+
+    div[data-baseweb="select"] * {
+        color: white !important;
+        background-color: #1a1a1a !important;
+    }
+
+    .stCheckbox label {
+        color: white !important;
+    }
+
+    .stNumberInput label {
+        color: white !important;
+    }
+
+    .stRadio label {
+        color: white !important;
+    }
+
+}
+
+</style>
+""", unsafe_allow_html=True)
+
 @st.cache_resource
 def load_model():
     model = joblib.load("models/best_model.pkl")
@@ -272,6 +332,10 @@ hr { border-color: #e5e7eb !important; }
                 "US_Number": us_number, "Free_Fluids": 1 if free_fluids == "Yes" else 0,
             }])
             if model_loaded:
+                for col in feature_names:
+                    if col not in input_data.columns:
+                        input_data[col] = 0
+                input_data = input_data[feature_names]
                 proba = model.predict_proba(input_data)[0][1]
                 percent = int(proba * 100)
                 color = "#dc2626" if proba > 0.5 else "#16a34a"

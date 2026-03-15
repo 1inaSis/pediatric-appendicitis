@@ -1,11 +1,11 @@
+streamlit>=1.40.0
+pandas
+numpy
+scikit-learn
+lightgbm
 catboost
 joblib
-lightgbm
 matplotlib
-numpy
-openpyxl
-pandas
-scikit-learn
 scipy
 shap
-streamlit
+openpyxl
