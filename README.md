@@ -680,6 +680,15 @@ python src/evaluate_model.py
 streamlit run app/app.py
 ```
 
-The app will open at: `http://localhost:8501`
+The app will open at: `https://localhost:8501`
+
+---
+## 14- Team organization
+
+Here, check out what each of us did to accomplish this project through our JIRA board.
+
+https://centrale-casablanca-team-oz4vw9lf.atlassian.net/jira/core/projects/SYY/list?atlOrigin=eyJpIjoiYzkzMTQ4NDIyNzlhNDNiY2FiZWI1NWZhYTg5OGYxYjkiLCJwIjoiaiJ9
+
+If you want to see the subtasks of each one of us, just click on the flash icon.
 
 ---
